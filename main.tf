@@ -95,6 +95,9 @@ echo "Starting secure setup script at $(date)"
 # Phase 1: システムアップデートと基本セキュリティ設定
 echo "Phase 1: System update and security setup"
 
+# 非インタラクティブ
+export DEBIAN_FRONTEND=noninteractive
+
 apt-get update
 apt-get upgrade -y
 
@@ -103,6 +106,7 @@ echo "Setting up Japanese locale..."
 apt-get install -y language-pack-ja
 locale-gen ja_JP.UTF-8
 update-locale LANG=ja_JP.UTF-8
+
 
 # システム全体のロケール設定
 cat > /etc/default/locale << 'LOCALE_EOF'
@@ -117,7 +121,7 @@ timedatectl set-timezone Asia/Tokyo
 echo "Locale and timezone configured for Japan"
 
 # 基本ツールとufwのインストール（最優先）
-apt-get install -y curl wget git vim build-essential ufw fail2ban keychain
+apt-get install -y curl wget git vim build-essential ufw fail2ban keychain tmux
 
 # Phase 2: ファイアウォール設定（アプリインストール前）
 echo "Phase 2: Firewall configuration"
@@ -210,7 +214,26 @@ echo "fail2ban configured successfully"
 echo "fail2ban disabled by configuration"
 %{ endif }
 
-# Phase 5: 不要なサービスの無効化
+# Phase 5: 日本語入力システム（uim）のインストール
+echo "Installing Japanese input method (uim)..."
+apt-get install -y uim-fep uim-anthy
+
+# uim設定ファイルのバックアップ
+cp /usr/share/uim/generic-key-custom.scm /usr/share/uim/generic-key-custom.scm.backup 2>/dev/null || true
+
+# uim日本語入力切り替え設定（Ctrl+Space）
+echo "Configuring uim key bindings..."
+cat >> /usr/share/uim/generic-key-custom.scm << 'UIM_EOF'
+
+;; 日本語入力切り替え設定（Ctrl+Space）
+(define-key generic-on-key? '("<Control> "))
+(define-key generic-off-key? '("<Control> "))
+UIM_EOF
+
+echo "Japanese input method configured (Ctrl+Space to toggle)"
+
+#
+# Phase 6: 不要なサービスの無効化
 echo "Phase 5: Disabling unnecessary services"
 
 systemctl disable --now snapd postfix exim4 sendmail cups avahi-daemon bluetooth 2>/dev/null || true
@@ -239,6 +262,76 @@ export LANG=ja_JP.UTF-8
 export LANGUAGE=ja_JP:ja
 export LC_ALL=ja_JP.UTF-8
 LOCALE_EOF
+
+# uim日本語入力の設定をubuntuユーザーに追加
+cat >> ~/.bashrc << 'UIM_EOF'
+
+# uim-fep エイリアス設定
+alias jp='uim-fep'
+alias japanese='uim-fep'
+UIM_EOF
+
+# uim個人設定ディレクトリ作成
+mkdir -p ~/.uim.d
+
+# 個人用uim設定ファイル作成
+cat > ~/.uim.d/customs/custom-global.scm << 'UIM_CUSTOM_EOF'
+;; uim個人設定
+(define default-im-name 'anthy)
+(define enabled-im-list '(anthy))
+UIM_CUSTOM_EOF
+
+# tmuxと日本語入力の使い方をログイン時に表示
+cat >> ~/.bashrc << 'HELP_EOF'
+
+# ログイン時にツール使用方法を表示
+cat << 'TOOLS_HELP_EOF'
+=== 基本ツール使用方法 ===
+【tmux - ターミナルマルチプレクサー】
+セッション管理:
+  tmux                    # 新しいセッション開始
+  tmux new -s myname      # 名前付きセッション作成
+  tmux ls                 # セッション一覧
+  tmux attach -t myname   # セッションにアタッチ
+  tmux kill-session -t myname # セッション終了
+
+キーバインド (Ctrl+b がプレフィックス):
+  Ctrl+b d - セッションをデタッチ
+  Ctrl+b c - 新しいウィンドウ作成
+  Ctrl+b n/p - 次/前のウィンドウ
+  Ctrl+b w - ウィンドウ一覧
+  Ctrl+b % - 縦に分割
+  Ctrl+b " - 横に分割
+  Ctrl+b o - ペイン間移動
+  Ctrl+b x - ペイン削除
+  Ctrl+b z - ペイン最大化切り替え
+
+【日本語入力 (uim-fep)】
+  jp                      # 日本語入力開始 (uim-fep のエイリアス)
+  Ctrl+Space              # 日本語↔英語切り替え
+
+【開発環境】
+  mise list               # インストール済み言語バージョン一覧
+  mise use node@18        # Node.jsバージョン切り替え
+  mise use python@3.11    # Pythonバージョン切り替え
+  claude-code             # Claude Code開始
+=================================
+TOOLS_HELP_EOF
+HELP_EOF
+
+# uim日本語入力設定
+export UIM_CANDWIN_PROG=uim-candwin-gtk
+export GTK_IM_MODULE=uim
+export QT_IM_MODULE=uim
+
+# uim日本語入力設定
+export UIM_CANDWIN_PROG=uim-candwin-gtk
+export GTK_IM_MODULE=uim
+export QT_IM_MODULE=uim
+# uim日本語入力設定
+export UIM_CANDWIN_PROG=uim-candwin-gtk
+export GTK_IM_MODULE=uim
+export QT_IM_MODULE=uim
 
 # keychain設定をヒアドキュメントで追加
 cat >> ~/.bashrc << 'KEYCHAIN_EOF'
@@ -304,7 +397,7 @@ git config --global user.email "${var.github_email}"
 git config --global init.defaultBranch main
 
 # 基本ディレクトリ作成
-mkdir -p ~/projects ~/workspace
+mkdir -p ~/workspace
 
 # GitHub SSH設定スクリプト（keychain対応版）
 %{ if var.github_email != "" }
