@@ -172,7 +172,7 @@ github_ssh_setup = "Run GitHub SSH setup: ssh -i ~/.ssh/claude-dev-key.pem -p 10
 ## 🔗 STEP 4: EC2インスタンスへの接続
 
 ### 4.1 SSH接続
-
+※ 接続可能になるまで 3〜5分くらいかかります。セットアップ処理が色々実行されるので
 ```bash
 # 出力されたSSHコマンドを使用
 ssh -i ~/.ssh/claude-dev-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx
