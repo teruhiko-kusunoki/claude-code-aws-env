@@ -472,7 +472,7 @@ git remote set-url origin git@github.com:username/repository.git
 sudo cat /var/log/user-data.log
 
 # 手動でスクリプトを再実行
-sudo bash /var/lib/cloud/instances/*/user-data.txt
+sudo bash /var/lib/cloud/instance/scripts/*
 ```
 
 #### 5. keychainが動作しない
