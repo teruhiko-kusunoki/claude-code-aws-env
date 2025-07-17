@@ -254,7 +254,7 @@ curl https://mise.run | sh
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
 
-# 日本語ロケール設定をubuntuユーザーに追加
+# 日本語ロケール設定
 cat >> ~/.bashrc << 'LOCALE_EOF'
 
 # 日本語ロケール設定
@@ -263,7 +263,7 @@ export LANGUAGE=ja_JP:ja
 export LC_ALL=ja_JP.UTF-8
 LOCALE_EOF
 
-# uim日本語入力の設定をubuntuユーザーに追加
+# uim日本語入力の設定
 cat >> ~/.bashrc << 'UIM_EOF'
 
 # uim-fep エイリアス設定
@@ -315,25 +315,22 @@ cat << 'TOOLS_HELP_EOF'
   mise use node@18        # Node.jsバージョン切り替え
   mise use python@3.11    # Pythonバージョン切り替え
   claude-code             # Claude Code開始
+
+【Git便利エイリアス】
+  git graph               # ブランチ履歴をグラフで表示
+  git one                 # 履歴を1行で表示
+  git br                  # ブランチ一覧（更新日順）
+  git bc                  # 現在のブランチ確認
+  git st                  # ステータス短縮表示
+  git co <branch>         # ブランチ切り替え
+  git cob <branch>        # ブランチ作成&切り替え
+  git aa                  # 全変更をステージング
+  git conflicts           # コンフリクトファイル一覧
 =================================
 TOOLS_HELP_EOF
 HELP_EOF
 
-# uim日本語入力設定
-export UIM_CANDWIN_PROG=uim-candwin-gtk
-export GTK_IM_MODULE=uim
-export QT_IM_MODULE=uim
-
-# uim日本語入力設定
-export UIM_CANDWIN_PROG=uim-candwin-gtk
-export GTK_IM_MODULE=uim
-export QT_IM_MODULE=uim
-# uim日本語入力設定
-export UIM_CANDWIN_PROG=uim-candwin-gtk
-export GTK_IM_MODULE=uim
-export QT_IM_MODULE=uim
-
-# keychain設定をヒアドキュメントで追加
+# keychain設定
 cat >> ~/.bashrc << 'KEYCHAIN_EOF'
 
 # keychain設定
@@ -355,7 +352,7 @@ if command -v keychain >/dev/null 2>&1; then
 fi
 KEYCHAIN_EOF
 
-# npmの設定をヒアドキュメントで追加
+# npmの設定
 cat >> ~/.bashrc << 'NPM_EOF'
 export PATH=~/.npm-global/bin:$PATH
 NPM_EOF
@@ -395,6 +392,20 @@ git config --global user.name "${var.github_username}"
 git config --global user.email "${var.github_email}"
 %{ endif }
 git config --global init.defaultBranch main
+
+# Git便利エイリアス設定
+cat >> ~/.gitconfig << 'GIT_ALIAS_EOF'
+[alias]
+  graph = log --graph --date-order -C -M --pretty=format:\"<%h> %ad [%an] %Cgreen%d%Creset %s\" --all --date=short
+  one = log --oneline
+  br = branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative))' --sort=-committerdate
+  bc = branch --contains
+  st = status -s
+  co = checkout
+  cob = checkout -b
+  aa = add --all
+  conflicts = diff --name-only --diff-filter=U
+GIT_ALIAS_EOF
 
 # 基本ディレクトリ作成
 mkdir -p ~/workspace
