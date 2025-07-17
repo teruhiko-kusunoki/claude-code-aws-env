@@ -495,3 +495,4 @@ source ~/.keychain/$(hostname)-sh
 - [tmux Documentation](https://github.com/tmux/tmux/wiki)
 - [GitHub SSH Authentication](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
 - [uim Documentation](https://github.com/uim/uim/wiki)
+- [Anthy Documentation](https://github.com/netsphere-labs/anthy)
