@@ -495,7 +495,3 @@ source ~/.keychain/$(hostname)-sh
 - [tmux Documentation](https://github.com/tmux/tmux/wiki)
 - [GitHub SSH Authentication](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
 - [uim Documentation](https://github.com/uim/uim/wiki)
-
----
-
-**✅ このマニュアルに従って設定すれば、セキュアで高機能なClaude Code開発環境が完成します！**
