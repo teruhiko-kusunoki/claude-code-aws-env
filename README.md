@@ -9,6 +9,11 @@
 
 # Claude Code開発環境構築マニュアル
 
+## 📱 できるようになること
+クラウド上に ClaudeCode 環境を作って、いつでも何処でも ClaudeCode で開発できるようになります。
+<img width="30%" height="1711" alt="Screenshot_20250717-125014~2" src="https://github.com/user-attachments/assets/74c7c098-a7a0-47b0-87b2-20bdc3b63f13" />
+<img width="30%" height="1783" alt="Screenshot_20250717-225940~2" src="https://github.com/user-attachments/assets/315b26c8-543e-45d7-9f84-06c182539492" />
+
 ## 📋 概要
 
 このマニュアルでは、TerraformとAWSを使用してClaude Code開発環境を構築する手順を説明します。構築される環境には以下が含まれます：
