@@ -361,6 +361,9 @@ NPM_EOF
 export PATH="$HOME/.local/bin:$PATH"
 eval "$(~/.local/bin/mise activate bash)"
 
+# .node-version でもdeprecat の警告を出さない
+mise settings add idiomatic_version_file_enable_tools node
+
 # Node.jsバージョンのインストール
 mise use --global node@${var.default_node_version}
 ${join("\n", [for version in var.node_versions : "mise install node@${version}" if version != var.default_node_version])}
