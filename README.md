@@ -476,18 +476,39 @@ sudo ufw status verbose
   tmux new -s myname      # 名前付きセッション作成
   tmux ls                 # セッション一覧
   tmux attach -t myname   # セッションにアタッチ
+  tmux kill-session -t myname # セッション終了
+
+tmuxのキーバインド (Ctrl+b がプレフィックス):
+  Ctrl+b d - セッションをデタッチ
+  Ctrl+b c - 新しいウィンドウ作成
+  Ctrl+b n/p - 次/前のウィンドウ
+  Ctrl+b w - ウィンドウ一覧
+  Ctrl+b % - 縦に分割
+  Ctrl+b " - 横に分割
+  Ctrl+b o - ペイン間移動
+  Ctrl+b x - ペイン削除
+  Ctrl+b z - ペイン最大化切り替え
 
 【日本語入力 (uim-fep)】
-  jp                      # 日本語入力開始
+  jp                      # 日本語入力開始 (uim-fep のエイリアス)
   Ctrl+Space              # 日本語↔英語切り替え
+
+【開発環境】
+  mise list               # インストール済み言語バージョン一覧
+  mise use node@18        # Node.jsバージョン切り替え
+  mise use python@3.11    # Pythonバージョン切り替え
+  claude-code             # Claude Code開始
 
 【Git便利エイリアス】
   git graph               # ブランチ履歴をグラフで表示
+  git one                 # 履歴を1行で表示
   git br                  # ブランチ一覧（更新日順）
+  git bc                  # 現在のブランチ確認
   git st                  # ステータス短縮表示
   git co <branch>         # ブランチ切り替え
   git cob <branch>        # ブランチ作成&切り替え
   git aa                  # 全変更をステージング
+  git conflicts           # コンフリクトファイル一覧
 =================================
 ```
 
