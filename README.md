@@ -1,12 +1,3 @@
-## 📁 必要なファイル
-
-以下のファイルを同じディレクトリに配置してください：
-
-1. `main.tf` - メインのTerraform設定
-2. `variables.tf` - 変数定義
-3. `terraform.tfvars.sample` - 設定値のサンプル
-4. `README.md` - このマニュアル
-
 # Claude Code開発環境構築マニュアル
 
 ## 📱 できるようになること
@@ -61,44 +52,9 @@ terraform version
 3. `terraform.tfvars` - 環境固有の設定値
 4. `README.md` - このマニュアル
 
-## 🔐 STEP 1: AWSキーペアの作成
+## 📝 STEP 1: 設定ファイルの準備
 
-### 1.1 AWS CLIでキーペア作成
-
-```bash
-# キーペアを作成
-aws ec2 create-key-pair \
-  --key-name claude-dev-key \
-  --region ap-northeast-1 \
-  --query 'KeyMaterial' \
-  --output text > ~/.ssh/claude-dev-key.pem
-
-# 権限設定
-chmod 600 ~/.ssh/claude-dev-key.pem
-```
-
-### 1.2 AWS Management Consoleでの作成（代替方法）
-
-1. [EC2コンソール](https://console.aws.amazon.com/ec2/) にアクセス
-2. 左メニューの「キーペア」をクリック
-3. 「キーペアを作成」をクリック
-4. 名前：`claude-dev-key`
-5. キータイプ：`RSA`
-6. プライベートキーファイル形式：`.pem`
-7. 「キーペアを作成」をクリック
-8. ダウンロードされたファイルを `~/.ssh/claude-dev-key.pem` に配置
-9. 権限設定：`chmod 600 ~/.ssh/claude-dev-key.pem`
-
-### 1.3 キーペア確認
-
-```bash
-# キーペアが存在することを確認
-aws ec2 describe-key-pairs --key-names claude-dev-key --region ap-northeast-1
-```
-
-## 📝 STEP 2: 設定ファイルの準備
-
-### 2.1 terraform.tfvars の作成
+### 1.1 terraform.tfvars の作成
 
 サンプルファイルをコピーして設定ファイルを作成します：
 
@@ -114,14 +70,18 @@ vim terraform.tfvars
 
 ```hcl
 # 必須変更項目
-key_name = "claude-dev-key"        # 作成したキーペア名
 github_username = "your-username"  # あなたのGitHubユーザー名
 github_email = "your@email.com"    # あなたのメールアドレス
+
+# キー設定（デフォルトで自動生成、カスタマイズする場合のみ設定）
+# key_name = ""                    # 空の場合、SSH慣例に従った名前を自動生成
+# ssh_key_algorithm = "ed25519"    # デフォルト。rsa, ecdsa も選択可能
+# environment_name = "dev"         # デフォルト。test, project-a など任意の名前
 ```
 
 その他の設定はお好みで調整してください。
 
-### 2.2 設定値の説明
+### 1.2 設定値の説明
 
 `terraform.tfvars.sample` に記載されている設定項目の説明：
 
@@ -132,6 +92,126 @@ github_email = "your@email.com"    # あなたのメールアドレス
 | `ssh_port` | カスタムSSHポート | `10022` (セキュリティ向上) |
 | `node_versions` | インストールするNode.jsバージョン | お好みで選択 |
 | `python_versions` | インストールするPythonバージョン | お好みで選択 |
+
+## 🔐 STEP 2: AWSキーペアの作成
+
+terraform.tfvarsの設定に基づいて、対応するSSHキーペアを作成します。
+
+### デフォルト設定（推奨）
+
+デフォルトでは、SSH慣例に従った自動キー生成を使用します：
+
+```bash
+# デフォルト設定でのキー作成（ED25519、環境名: dev）
+aws ec2 create-key-pair \
+  --key-name id_ed25519_claude_dev_key \
+  --key-type ed25519 \
+  --region ap-northeast-1 \
+  --query 'KeyMaterial' \
+  --output text > ~/.ssh/id_ed25519_claude_dev_key.pem
+
+# 権限設定
+chmod 600 ~/.ssh/id_ed25519_claude_dev_key.pem
+```
+
+### 環境名やアルゴリズムをカスタマイズした場合
+
+`terraform.tfvars`で設定を変更した場合のキー作成例：
+
+**例1: 環境名を"test"に変更**
+```hcl
+# terraform.tfvars
+environment_name = "test"
+```
+```bash
+# 対応するキー作成コマンド
+aws ec2 create-key-pair \
+  --key-name id_ed25519_claude_test_key \
+  --key-type ed25519 \
+  --region ap-northeast-1 \
+  --query 'KeyMaterial' \
+  --output text > ~/.ssh/id_ed25519_claude_test_key.pem
+
+chmod 600 ~/.ssh/id_ed25519_claude_test_key.pem
+```
+
+**例2: アルゴリズムをRSAに変更**
+```hcl
+# terraform.tfvars
+ssh_key_algorithm = "rsa"
+```
+```bash
+# 対応するキー作成コマンド
+aws ec2 create-key-pair \
+  --key-name id_rsa_claude_dev_key \
+  --key-type rsa \
+  --region ap-northeast-1 \
+  --query 'KeyMaterial' \
+  --output text > ~/.ssh/id_rsa_claude_dev_key.pem
+
+chmod 600 ~/.ssh/id_rsa_claude_dev_key.pem
+```
+
+**例3: 両方をカスタマイズ**
+```hcl
+# terraform.tfvars
+environment_name = "project-a"
+ssh_key_algorithm = "ecdsa"
+```
+```bash
+# 対応するキー作成コマンド
+aws ec2 create-key-pair \
+  --key-name id_ecdsa_claude_project-a_key \
+  --key-type ecdsa \
+  --region ap-northeast-1 \
+  --query 'KeyMaterial' \
+  --output text > ~/.ssh/id_ecdsa_claude_project-a_key.pem
+
+chmod 600 ~/.ssh/id_ecdsa_claude_project-a_key.pem
+```
+
+### 手動でキー名を指定した場合
+
+```hcl
+# terraform.tfvars
+key_name = "my-custom-key"
+```
+```bash
+# 指定したキー名でキー作成
+aws ec2 create-key-pair \
+  --key-name my-custom-key \
+  --key-type ed25519 \
+  --region ap-northeast-1 \
+  --query 'KeyMaterial' \
+  --output text > ~/.ssh/my-custom-key.pem
+
+chmod 600 ~/.ssh/my-custom-key.pem
+```
+
+### キーペア確認
+
+```bash
+# キーペアが存在することを確認（デフォルト設定の場合）
+aws ec2 describe-key-pairs --key-names id_ed25519_claude_dev_key --region ap-northeast-1
+
+# カスタマイズした場合の例
+# aws ec2 describe-key-pairs --key-names id_rsa_claude_test_key --region ap-northeast-1
+# aws ec2 describe-key-pairs --key-names my-custom-key --region ap-northeast-1
+```
+
+### AWS Management Consoleでの作成（代替方法）
+
+1. [EC2コンソール](https://console.aws.amazon.com/ec2/) にアクセス
+2. 左メニューの「キーペア」をクリック
+3. 「キーペアを作成」をクリック
+4. 名前：上記で決定したキー名（例：`id_ed25519_claude_dev_key`）
+5. キータイプ：対応するタイプ（`ED25519`/`RSA`/`ECDSA`）
+6. プライベートキーファイル形式：`.pem`
+7. 「キーペアを作成」をクリック
+8. ダウンロードされたファイルを適切なパスに配置
+9. 権限設定：`chmod 600 ~/.ssh/<キーファイル名>`
+
+**注意**: `key_name`を手動で指定した場合、`environment_name`や`ssh_key_algorithm`の設定は無視されます。
 
 ## 🚀 STEP 3: インフラストラクチャのデプロイ
 
@@ -169,9 +249,9 @@ terraform apply
 
 ```bash
 instance_public_ip = "xxx.xxx.xxx.xxx"
-ssh_command = "ssh -i ~/.ssh/claude-dev-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx"
-setup_status = "Check setup status: ssh -i ~/.ssh/claude-dev-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx 'cat setup_complete.txt'"
-github_ssh_setup = "Run GitHub SSH setup: ssh -i ~/.ssh/claude-dev-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx './setup-github-ssh.sh'"
+ssh_command = "ssh -i ~/.ssh/id_ed25519_claude_dev_key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx"
+setup_status = "Check setup status: ssh -i ~/.ssh/id_ed25519_claude_dev_key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx 'cat setup_complete.txt'"
+github_ssh_setup = "Run GitHub SSH setup: ssh -i ~/.ssh/id_ed25519_claude_dev_key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx './setup-github-ssh.sh'"
 ```
 
 ## 🔗 STEP 4: EC2インスタンスへの接続
@@ -179,8 +259,12 @@ github_ssh_setup = "Run GitHub SSH setup: ssh -i ~/.ssh/claude-dev-key.pem -p 10
 ### 4.1 SSH接続
 ※ 接続可能になるまで 3〜5分くらいかかります。セットアップ処理が色々実行されるので
 ```bash
-# 出力されたSSHコマンドを使用
-ssh -i ~/.ssh/claude-dev-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx
+# 出力されたSSHコマンドを使用（デフォルト設定の場合）
+ssh -i ~/.ssh/id_ed25519_claude_dev_key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx
+
+# カスタマイズした場合の例
+# ssh -i ~/.ssh/id_rsa_claude_test_key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx
+# ssh -i ~/.ssh/my-custom-key.pem -p 10022 ubuntu@xxx.xxx.xxx.xxx
 ```
 
 ### 4.2 セットアップ状況の確認
@@ -249,7 +333,7 @@ ssh -T git@github.com
 Hi [your-username]! You've successfully authenticated, but GitHub does not provide shell access.
 ```
 
-### 6.4 Git便利エイリアステスト
+### 5.4 Git便利エイリアステスト
 
 ```bash
 # Git便利エイリアスの動作確認
@@ -480,15 +564,19 @@ sudo cat /var/log/user-data.log
 sudo bash /var/lib/cloud/instance/scripts/*
 ```
 
-#### 5. keychainが動作しない
+#### 4. keychainが動作しない
 
 ```bash
 # bashrcの再読み込み
 source ~/.bashrc
 
-# keychainを手動実行
-keychain ~/.ssh/github_ed25519
+# keychainを手動実行（デフォルト設定の場合）
+keychain ~/.ssh/id_ed25519_claude_dev_key.pem
 source ~/.keychain/$(hostname)-sh
+
+# カスタマイズした場合は対応するキーファイルを使用
+# keychain ~/.ssh/id_rsa_claude_test_key.pem
+# keychain ~/.ssh/my-custom-key.pem
 ```
 
 ## 📚 参考資料
