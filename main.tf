@@ -20,12 +20,15 @@ locals {
   }
   
   ubuntu_ami_id = local.ubuntu_ami_ids[var.aws_region]
+  
+  # キー名の自動生成（空の場合、SSH慣例に従う）
+  actual_key_name = var.key_name != "" ? var.key_name : "id_${var.ssh_key_algorithm}_claude_${var.environment_name}_key"
 }
 
 # セキュリティグループ
 resource "aws_security_group" "claude_code_sg" {
-  name_prefix = "claude-code-"
-  description = "Security group for Claude Code development environment"
+  name_prefix = "claude-code-${var.environment_name}-"
+  description = "Security group for Claude Code development environment (${var.environment_name})"
 
   # カスタムSSHポート（変数使用）
   ingress {
@@ -78,7 +81,7 @@ resource "aws_security_group" "claude_code_sg" {
   }
 
   tags = {
-    Name = "claude-code-sg-secure"
+    Name = "claude-code-${var.environment_name}-sg"
   }
 }
 
@@ -272,7 +275,7 @@ alias japanese='uim-fep'
 UIM_EOF
 
 # uim個人設定ディレクトリ作成
-mkdir -p ~/.uim.d
+mkdir -p ~/.uim.d/customs
 
 # 個人用uim設定ファイル作成
 cat > ~/.uim.d/customs/custom-global.scm << 'UIM_CUSTOM_EOF'
@@ -280,6 +283,17 @@ cat > ~/.uim.d/customs/custom-global.scm << 'UIM_CUSTOM_EOF'
 (define default-im-name 'anthy)
 (define enabled-im-list '(anthy))
 UIM_CUSTOM_EOF
+
+# tmuxのスクロール設定
+cat > ~/.tmux.conf << 'TMUX_CONF_EOF'
+# scroll
+set -g mouse on
+set -g terminal-overrides 'xterm*:smcup@:rmcup@'
+
+# Mouse wheel scrolling
+bind -T copy-mode-vi WheelUpPane send-keys -X -N 5 scroll-up
+bind -T copy-mode-vi WheelDownPane send-keys -X -N 5 scroll-down
+TMUX_CONF_EOF
 
 # tmuxと日本語入力の使い方をログイン時に表示
 cat >> ~/.bashrc << 'HELP_EOF'
@@ -295,7 +309,7 @@ cat << 'TOOLS_HELP_EOF'
   tmux attach -t myname   # セッションにアタッチ
   tmux kill-session -t myname # セッション終了
 
-キーバインド (Ctrl+b がプレフィックス):
+tmuxのキーバインド (Ctrl+b がプレフィックス):
   Ctrl+b d - セッションをデタッチ
   Ctrl+b c - 新しいウィンドウ作成
   Ctrl+b n/p - 次/前のウィンドウ
@@ -504,7 +518,7 @@ resource "null_resource" "validation" {
 resource "aws_instance" "claude_code_dev" {
   ami           = local.ubuntu_ami_id
   instance_type = var.instance_type
-  key_name      = var.key_name
+  key_name      = local.actual_key_name
 
   vpc_security_group_ids = [aws_security_group.claude_code_sg.id]
 
@@ -519,8 +533,9 @@ resource "aws_instance" "claude_code_dev" {
   }
 
   tags = {
-    Name = "claude-code-dev-environment"
+    Name = "claude-code-${var.environment_name}"
     Type = "development"
+    Environment = var.environment_name
   }
 }
 
@@ -530,7 +545,7 @@ resource "aws_eip" "claude_code_eip" {
   domain   = "vpc"
 
   tags = {
-    Name = "claude-code-dev-eip"
+    Name = "claude-code-${var.environment_name}-eip"
   }
 }
 
@@ -547,15 +562,20 @@ output "instance_private_ip" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ~/.ssh/${var.key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip}"
+  value       = "ssh -i ~/.ssh/${local.actual_key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip}"
 }
 
 output "setup_status" {
   description = "How to check setup status"
-  value       = "Check setup status: ssh -i ~/.ssh/${var.key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip} 'cat setup_complete.txt'"
+  value       = "Check setup status: ssh -i ~/.ssh/${local.actual_key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip} 'cat setup_complete.txt'"
 }
 
 output "github_ssh_setup" {
   description = "GitHub SSH setup command"
-  value       = var.github_email != "" ? "Run GitHub SSH setup: ssh -i ~/.ssh/${var.key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip} './setup-github-ssh.sh'" : "GitHub email not configured"
+  value       = var.github_email != "" ? "Run GitHub SSH setup: ssh -i ~/.ssh/${local.actual_key_name}.pem -p ${var.ssh_port} ubuntu@${aws_eip.claude_code_eip.public_ip} './setup-github-ssh.sh'" : "GitHub email not configured"
+}
+
+output "key_name_used" {
+  description = "The actual key name used (generated or specified)"
+  value       = local.actual_key_name
 }

@@ -18,8 +18,9 @@ variable "instance_type" {
 }
 
 variable "key_name" {
-  description = "Name of the AWS key pair for SSH access"
+  description = "Name of the AWS key pair for SSH access. Leave empty to auto-generate from environment_name"
   type        = string
+  default     = ""
 }
 
 variable "ssh_port" {
@@ -94,4 +95,24 @@ variable "default_python_version" {
   description = "Default Python version (must be one of the python_versions)"
   type        = string
   default     = "latest"
+}
+
+variable "environment_name" {
+  description = "Name to identify this environment (e.g., 'dev', 'test', 'project-a')"
+  type        = string
+  default     = "dev"
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.environment_name))
+    error_message = "Environment name must contain only lowercase letters, numbers, and hyphens."
+  }
+}
+
+variable "ssh_key_algorithm" {
+  description = "SSH key algorithm for auto-generated key names"
+  type        = string
+  default     = "ed25519"
+  validation {
+    condition     = contains(["rsa", "ed25519", "ecdsa"], var.ssh_key_algorithm)
+    error_message = "SSH key algorithm must be one of: rsa, ed25519, ecdsa."
+  }
 }
